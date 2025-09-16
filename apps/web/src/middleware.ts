@@ -1,72 +1,94 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+// apps/web/src/middleware.ts
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { createServerClient } from "@supabase/ssr"
+import type { Database } from "@/types/supabase"
 
 export async function middleware(req: NextRequest) {
-  const supabase = createServerClient(
+  const res = NextResponse.next()
+
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
-          return req.cookies.get(name)?.value;
+          return req.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options) {
+          res.cookies.set(name, value, options)
+        },
+        remove(name: string, options) {
+          res.cookies.set(name, "", { ...options, maxAge: 0 })
         },
       },
     }
-  );
+  )
 
+  // 1) busca usuário autenticado
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+    error,
+  } = await supabase.auth.getUser()
 
-  // Se não estiver logado → manda pro /login
-  if (!user) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  if (error || !user) {
+    console.warn("⚠️ Middleware não achou sessão:", error?.message)
+    return NextResponse.redirect(new URL("/login", req.url))
   }
 
-  const role = (user.app_metadata as any)?.role;
+  // 2) busca perfil no banco (com tipagem explícita)
+  const { data: profileData, error: profileError } = await supabase
+    .from("profiles")
+    .select("role, escola_id")
+    .eq("user_id", user.id)
+    .single()
 
-  // Rotas protegidas por role
-  if (req.nextUrl.pathname.startsWith("/admin")) {
-    if (role !== "admin" && role !== "super_admin") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+  // 3) normaliza valores com tipagem segura
+  const role: string = (profileData as { role?: string } | null)?.role ?? "guest"
+  const escola_id: string | null = (profileData as { escola_id?: string } | null)?.escola_id ?? null
+  const pathname = req.nextUrl.pathname
+
+  console.log("DEBUG middleware user:", { role, escola_id, pathname })
+
+  // 4) regras de acesso
+  if (pathname.startsWith("/super-admin") && role !== "super_admin") {
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
-  if (req.nextUrl.pathname.startsWith("/aluno")) {
-    if (role !== "aluno") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+  if (
+    pathname.startsWith("/admin") &&
+    role !== "admin" &&
+    role !== "super_admin"
+  ) {
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
-  if (req.nextUrl.pathname.startsWith("/professor")) {
-    if (role !== "professor") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+  if (pathname.startsWith("/professor") && role !== "professor") {
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
-  if (req.nextUrl.pathname.startsWith("/secretaria")) {
-    if (role !== "secretaria" && role !== "admin") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+  if (pathname.startsWith("/aluno") && role !== "aluno") {
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
-  if (req.nextUrl.pathname.startsWith("/financeiro")) {
-    if (role !== "financeiro" && role !== "admin") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+  if (pathname.startsWith("/secretaria") && role !== "secretaria") {
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
-  return NextResponse.next();
+  if (pathname.startsWith("/financeiro") && role !== "financeiro") {
+    return NextResponse.redirect(new URL("/", req.url))
+  }
+
+  return res
 }
 
-// Define onde o middleware roda
 export const config = {
   matcher: [
+    "/super-admin/:path*",
     "/admin/:path*",
     "/aluno/:path*",
     "/professor/:path*",
     "/secretaria/:path*",
     "/financeiro/:path*",
   ],
-};
+}

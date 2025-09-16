@@ -1,54 +1,61 @@
-"use client";
+// apps/web/src/app/auth/redirect/page.tsx
+import { redirect } from "next/navigation"
+import { supabaseServer } from "@/lib/supabaseServer"
+import type { Database } from "@/types/supabase"
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabaseClient";
+export default async function RedirectPage() {
+  const supabase = await supabaseServer()
 
-export default function RedirectPage() {
-  const supabase = createClient();
-  const router = useRouter();
+  // 1) usuário autenticado (seguro)
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) {
+    redirect("/login")
+  }
 
-  useEffect(() => {
-    const checkRole = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  // 2) perfil no banco — TIPADO
+  const { data: profile } = await supabase
+    .from("profiles") // nome da tabela
+    .select("role, escola_id")
+    .eq("user_id", user.id)
+    .maybeSingle<Database["public"]["Tables"]["profiles"]["Row"]>()
 
-      if (!user) {
-        router.push("/login");
-        return;
+  // 3) valores normalizados (sem vermelho)
+  const role: Database["public"]["Enums"]["user_role"] | "guest" = profile?.role ?? "guest"
+  const escola_id: string | null = profile?.escola_id ?? null
+
+  // 4) redirect por role
+  switch (role) {
+    case "super_admin":
+      console.log("➡️ Redirecionando super_admin para /super-admin")
+      redirect("/super-admin")
+      break
+
+    case "admin":
+      if (escola_id) {
+        console.log(`➡️ Redirecionando admin para /admin/escolas/${escola_id}`)
+        redirect(`/admin/escolas/${escola_id}`)
+      } else {
+        redirect("/admin")
       }
+      break
 
-      const role = (user.app_metadata as any)?.role;
+    case "professor":
+      redirect("/professor")
+      break
 
-      switch (role) {
-        case "super_admin":
-        case "admin":
-          router.push("/admin");
-          break;
-        case "professor":
-          router.push("/professor");
-          break;
-        case "aluno":
-          router.push("/aluno");
-          break;
-        case "secretaria":
-          router.push("/secretaria");
-          break;
-        case "financeiro":
-          router.push("/financeiro");
-          break;
-        default:
-          router.push("/");
-      }
-    };
+    case "aluno":
+      redirect("/aluno")
+      break
 
-    checkRole();
-  }, [supabase, router]);
+    case "secretaria":
+      redirect("/secretaria")
+      break
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <p className="text-gray-700">🔄 Redirecionando...</p>
-    </div>
-  );
-}
+    case "financeiro":
+      redirect("/financeiro")
+      break
+
+    default:
+      redirect("/")
+  }
+} // ← COLCHETE DE FECHAMENTO ADICIONADO AQUI

@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabaseClient'; // ← Import corrigido
+import { createClient } from '@/lib/supabaseClient';
 import Image from 'next/image';
 
 export default function LoginPage() {
-  const supabase = createClient(); // ← Instância criada aqui
+  const supabase = createClient();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -26,25 +26,26 @@ export default function LoginPage() {
     if (error) {
       setErro('Credenciais inválidas. Verifique seus dados.');
     } else {
-        router.push("/redirect");
-
+      router.push('/redirect');
     }
 
     setCarregando(false);
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 px-4">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-8 space-y-6">
-        <div className="flex items-center justify-center gap-2">
-          <Image src="/logo.svg" alt="Moxi Soluções" width={32} height={32} />
-          <h1 className="text-2xl font-bold text-gray-800">Moxi Edtech</h1>
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-500 to-sky-600 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 space-y-6">
+        {/* Logo e título */}
+        <div className="flex flex-col items-center gap-3">
+          <Image src="/moxinexa-logo.svg" alt="Moxi Nexa" width={42} height={42} />
+          <h1 className="text-3xl font-bold text-slate-900">Moxi Nexa</h1>
+          <p className="text-sm text-slate-500">Sistema de Gestão Escolar</p>
         </div>
-        <p className="text-sm text-center text-gray-500">Criamos sistemas que escalam</p>
 
+        {/* Formulário */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-slate-700">
               E-mail institucional
             </label>
             <input
@@ -53,13 +54,13 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-600 focus:ring-blue-600"
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-600 focus:ring-teal-600"
               placeholder="seu@email.com"
             />
           </div>
 
           <div>
-            <label htmlFor="senha" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="senha" className="block text-sm font-medium text-slate-700">
               Senha
             </label>
             <input
@@ -68,24 +69,27 @@ export default function LoginPage() {
               required
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-600 focus:ring-blue-600"
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-600 focus:ring-teal-600"
               placeholder="••••••••"
             />
           </div>
 
-          {erro && <p className="text-red-600 text-sm">{erro}</p>}
+          {erro && (
+            <p className="text-center text-sm text-red-500 font-medium">{erro}</p>
+          )}
 
           <button
             type="submit"
             disabled={carregando}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-teal-600 hover:bg-teal-700 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {carregando ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400">
-          &copy; {new Date().getFullYear()} Moxi Soluções. Todos os direitos reservados.
+        {/* Rodapé */}
+        <p className="text-center text-xs text-slate-400">
+          &copy; {new Date().getFullYear()} Moxi Nexa. Criamos sistemas que escalam.
         </p>
       </div>
     </main>

@@ -2,24 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Fonte Poppins global */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+html, body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #F9FAFB; /* moxinexa-light */
+  color: #1A2B3C; /* moxinexa-dark */
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }

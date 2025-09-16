@@ -1,8 +1,12 @@
-import { createBrowserClient } from '@supabase/ssr'
+"use client";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// lib/supabaseClient.ts
+import { createBrowserClient } from "@supabase/ssr"
+import type { Database } from "@/types/supabase"
 
-// ✅ CORRETO: chama createBrowserClient, não createClient
-export const createClient = () => 
-  createBrowserClient(supabaseUrl, supabaseAnonKey)
+// usado no LoginPage ou qualquer coisa client-side
+export const createClient = () =>
+  createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
