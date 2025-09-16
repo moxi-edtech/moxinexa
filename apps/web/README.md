@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This app is a Next.js project using Supabase Auth with SSR cookies.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and start dev server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 and try the login flow.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Auth & Cookies (Supabase)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Required env vars:
+  - `NEXT_PUBLIC_SUPABASE_URL` (public)
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (public)
+  - `SUPABASE_SERVICE_ROLE_KEY` (server-only)
 
-## Learn More
+- Login flow:
+  - Client posts to `POST /api/auth/login` with email/password.
+  - The API uses `@supabase/ssr` with a cookie adapter to persist the session cookies.
+  - `/redirect` is an SSR page that reads the session and routes by role.
 
-To learn more about Next.js, take a look at the following resources:
+- Debug endpoint:
+  - `GET /api/debug/session` (add `?verbose=1` for extra note)
+  - Returns env presence, cookie names, and basic session/user info (no tokens).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Production (Vercel)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- In Project Settings → Environment Variables, add:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY` (server-only)
+- Re-deploy after changes.
+- If using auth callbacks, ensure your production URL is configured in Supabase Auth → URL Configuration.
 
-## Deploy on Vercel
+### Production (Render / Others)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Set the same environment variables for build and runtime.
+- Ensure Node 18+ runtime and that env vars are present in runtime.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Notes
+
+- In server files, `await cookies()` before passing to `createServerClient`.
+- Implement `cookies.get/set/remove` with correct signatures for `@supabase/ssr`.
+- Do not call `auth.admin` from the browser; use server routes.
